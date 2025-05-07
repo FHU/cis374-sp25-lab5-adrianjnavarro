@@ -10,10 +10,10 @@ public class Neighbor : IComparable<Neighbor>
 	public Node Node { get; set; }
 	public int Weight { get; set; }
 
-    public int CompareTo(Neighbor? other)
-    {
-        return this.CompareTo(other);
-    }
+	public int CompareTo(Neighbor? other)
+	{
+		return this.Node.CompareTo(other.Node);
+	}
 }
 
 public class Node : IComparable<Node>
@@ -22,7 +22,7 @@ public class Node : IComparable<Node>
 	public List<Neighbor> Neighbors { get; set; }
 	public Color Color { get; set; }
 
-	public Node(string name = "", Color color = Color.White)	
+	public Node(string name = "", Color color = Color.White)
 	{
 		Name = name;
 		Color = color;
@@ -33,6 +33,7 @@ public class Node : IComparable<Node>
 	{
 		return this.Name.CompareTo(other.Name);
 	}
+
 }
 
 

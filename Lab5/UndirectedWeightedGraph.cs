@@ -102,6 +102,20 @@ public class UndirectedWeightedGraph
         {
             int numConnectedComponents = 0;
 
+            foreach (Node node in Nodes)
+            {
+                node.Color = Color.White;
+            }
+
+            foreach (Node node in Nodes)
+            {
+                if (node.Color == Color.White)
+                {
+                    DFS(node, false);
+                    numConnectedComponents++;
+                }
+            }
+            return numConnectedComponents;
             // choose a random vertex
             // do a DFS from that vertex
             // increment the CC count
@@ -110,7 +124,7 @@ public class UndirectedWeightedGraph
             // increment the CC count
             // choose a random vertex that is white (unvisited)
 
-            return numConnectedComponents;
+
         }
     }
 
@@ -124,6 +138,8 @@ public class UndirectedWeightedGraph
         {
             throw new Exception($"{node1name} or {node2name} does not exist.)");
         }
+        if (node1 == node2)
+            return true;
 
         // Do a DFS
         var pred = DFS(node1);
@@ -173,17 +189,40 @@ public class UndirectedWeightedGraph
     /// <returns>The total cost of the weights in the path</returns>
     public int DFSPathBetween(string node1name, string node2name, out List<Node> pathList)
     {
-        // 1. initilize all the things 
         pathList = new List<Node>();
+        Node startNode = GetNodeByName(node1name);
+        Node endNode = GetNodeByName(node2name);
 
-        // initialize all colors to white
+        if (startNode == null || endNode == null)
+        {
+            throw new Exception("One or both nodes not found");
+        }
 
-        var node1 = FindNode(node1name);
-        var node2 = FindNode(node2name);
+        // Perform DFS to get predecessors
+        var pred = DFS(startNode);
+        int totalCost = 0;
 
-        // 2. Do all the path finding computation/generation
-        var resultsDictionary = DFS(startingNode);
+        // Reconstruct path if exists
+        if (pred[endNode] != null || startNode == endNode)
+        {
+            Node current = endNode;
+            while (current != null)
+            {
+                pathList.Insert(0, current);
+                Node previous = pred[current];
 
+                if (previous != null)
+                {
+                    // Find the edge between previous and current
+                    Neighbor neighbor = previous.Neighbors.Find(n => n.Node == current);
+                    totalCost += neighbor.Weight;
+                }
+
+                current = previous;
+            }
+        }
+
+        return totalCost;
         // 3. Post-process the data structures and convert them to the right format.
 
         /*
@@ -207,10 +246,10 @@ public class UndirectedWeightedGraph
 
         //return cost;
 
-        return 0;
+
     }
 
-   
+
 
 
     private void DFSVisit(Node node, Dictionary<Node, Node> pred)
@@ -302,14 +341,81 @@ public class UndirectedWeightedGraph
     public int BFSPathBetween(string node1, string node2, out List<Node> pathList)
     {
         pathList = new List<Node>();
+        Node startNode = GetNodeByName(node1);
+        Node endNode = GetNodeByName(node2);
 
+        if (startNode == null || endNode == null)
+        {
+            throw new Exception("One or both nodes not found");
+        }
 
-        return 0;
+        // Perform BFS to get predecessors
+        var bfsResults = BFS(startNode);
+        int totalCost = 0;
+
+        // Reconstruct path if exists
+        if (bfsResults[endNode].pred != null || startNode == endNode)
+        {
+            Node current = endNode;
+            while (current != null)
+            {
+                pathList.Insert(0, current);
+                Node previous = bfsResults[current].pred;
+
+                if (previous != null)
+                {
+                    // Find the edge between previous and current
+                    Neighbor neighbor = previous.Neighbors.Find(n => n.Node == current);
+                    totalCost += neighbor.Weight;
+                }
+
+                current = previous;
+            }
+        }
+
+        return totalCost;
     }
 
 
     public Dictionary<Node, (Node pred, int cost)> Dijkstra(Node startingNode)
     {
+        var results = new Dictionary<Node, (Node pred, int cost)>();
+        var priorityQueue = new PriorityQueue<Node, int>();
+
+        foreach (Node node in Nodes)
+        {
+            results[node] = (null, int.MaxValue);
+            node.Color = Color.White;
+        }
+
+        results[startingNode] = (null, 0);
+        priorityQueue.Enqueue(startingNode, 0);
+
+        while (priorityQueue.Count > 0)
+        {
+            Node current = priorityQueue.Dequeue();
+
+            if (current.Color == Color.Black)
+                continue;
+
+            current.Color = Color.Black;
+
+            foreach (Neighbor neighbor in current.Neighbors)
+            {
+                if (neighbor.Node.Color == Color.Black)
+                    continue;
+
+                int newCost = results[current].cost + neighbor.Weight;
+
+                if (newCost < results[neighbor.Node].cost)
+                {
+                    results[neighbor.Node] = (current, newCost);
+                    priorityQueue.Enqueue(neighbor.Node, newCost);
+                    neighbor.Node.Color = Color.Gray;
+                }
+            }
+        }
+
         // PriorityQueue<Neighbor, int> priorityQueue = new PriorityQueue<Neighbor, int>();
         // var neightbor = new Neighbor(){ Node= new Node(), Weight= 4};
 
@@ -318,7 +424,7 @@ public class UndirectedWeightedGraph
         // HashSet<Node> visited = new HashSet<Node>();    
 
 
-        return null;
+        return results;
     }
 
     /// <summary>
@@ -332,8 +438,37 @@ public class UndirectedWeightedGraph
     public int DijkstraPathBetween(string node1, string node2, out List<Node> pathList)
     {
         pathList = new List<Node>();
+        int totalCost = 0;
 
-        return 0;
+        Node startNode = GetNodeByName(node1);
+        Node endNode = GetNodeByName(node2);
+
+        if (startNode == null || endNode == null)
+        {
+            throw new Exception("One or both nodes not found");
+        }
+
+        var dijkstraResults = Dijkstra(startNode);
+
+        if (dijkstraResults[endNode].pred != null || startNode == endNode)
+        {
+            Node current = endNode;
+            while (current != null)
+            {
+                pathList.Insert(0, current);
+                Node previous = dijkstraResults[current].pred;
+
+                if (previous != null)
+                {
+                    Neighbor neighbor = previous.Neighbors.Find(n => n.Node == current);
+                    totalCost += neighbor.Weight;
+                }
+
+                current = previous;
+            }
+        }
+
+        return totalCost;
     }
 
 }
